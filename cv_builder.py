@@ -7,6 +7,7 @@ import copy
 import re
 import sqlite3
 import datetime
+import pytz
 from jinja2 import Environment, FileSystemLoader
 from pdf2image import convert_from_path
 import base64
@@ -46,10 +47,14 @@ def validate_data(data):
     for pub in data['publications']['under_review']:
         if pub['url'] and not validate_url(pub['url']):
             errors.append(f"Invalid URL in Under Review Publication: {pub['url']}")
+        if not pub['title']:
+            errors.append("Title is required for Under Review Publication.")
     for year, pubs in data['publications']['by_year'].items():
         for pub in pubs:
             if pub['url'] and not validate_url(pub['url']):
                 errors.append(f"Invalid URL in Publication (Year {year}): {pub['url']}")
+            if not pub['title']:
+                errors.append(f"Title is required for Publication (Year {year}).")
     for year, confs in data['conference_proceedings'].items():
         for conf in confs:
             if conf['url'] and not validate_url(conf['url']):
@@ -112,7 +117,8 @@ def pdf_to_images(pdf_content):
 
 # Create new database with updated data
 def create_new_db(json_content, tex_content, sty_content):
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
+    cest_tz = pytz.timezone("Europe/Paris")
+    timestamp = datetime.datetime.now(cest_tz).strftime("%Y%m%d%H%M")
     db_filename = f"cv{timestamp}.db"
     conn = sqlite3.connect(db_filename)
     cursor = conn.cursor()
@@ -123,7 +129,7 @@ def create_new_db(json_content, tex_content, sty_content):
             created_at TEXT
         )
     ''')
-    current_time = datetime.datetime.now().isoformat()
+    current_time = datetime.datetime.now(cest_tz).isoformat()
     cursor.execute("INSERT OR REPLACE INTO cv_files (filename, content, created_at) VALUES (?, ?, ?)",
                   ("cv_data.json", json_content, current_time))
     cursor.execute("INSERT OR REPLACE INTO cv_files (filename, content, created_at) VALUES (?, ?, ?)",
@@ -267,6 +273,9 @@ elif st.session_state["active_tab"] == "Publications":
             pub["url"] = st.text_input(f"URL", value=pub["url"], key=f"pub_under_url_{i}")
             pub["impact_factor"] = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_under_if_{i}")
             pub["citations"] = st.text_input(f"Citations", value=pub["citations"], key=f"pub_under_citations_{i}")
+            if st.button(f"Save Publication Under Review {i+1}", key=f"save_pub_under_{i}"):
+                st.session_state["data"]["publications"]["under_review"][i] = pub
+                st.success(f"Publication Under Review {i+1} saved.")
             if st.button(f"Remove Publication Under Review {i+1}", key=f"remove_pub_under_{i}"):
                 st.session_state["data"]["publications"]["under_review"].pop(i)
                 st.rerun()
@@ -279,6 +288,7 @@ elif st.session_state["active_tab"] == "Publications":
             st.session_state["data"]["publications"]["by_year"][year].append({
                 "authors": "", "title": "", "journal": "", "url": "", "impact_factor": "", "citations": ""
             })
+            st.success(f"New publication added for year {year}.")
     for year in sorted(st.session_state["data"]["publications"]["by_year"].keys(), reverse=True):
         with st.expander(f"Year {year}"):
             for i, pub in enumerate(st.session_state["data"]["publications"]["by_year"][year]):
@@ -289,6 +299,9 @@ elif st.session_state["active_tab"] == "Publications":
                 pub["url"] = st.text_input(f"URL", value=pub["url"], key=f"pub_{year}_url_{i}")
                 pub["impact_factor"] = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_{year}_if_{i}")
                 pub["citations"] = st.text_input(f"Citations", value=pub["citations"], key=f"pub_{year}_citations_{i}")
+                if st.button(f"Save Publication {i+1} (Year {year})", key=f"save_pub_{year}_{i}"):
+                    st.session_state["data"]["publications"]["by_year"][year][i] = pub
+                    st.success(f"Publication {i+1} (Year {year}) saved.")
                 if st.button(f"Remove Publication {i+1} (Year {year})", key=f"remove_pub_{year}_{i}"):
                     st.session_state["data"]["publications"]["by_year"][year].pop(i)
                     if not st.session_state["data"]["publications"]["by_year"][year]:
@@ -471,7 +484,8 @@ with col1:
             for error in errors:
                 st.error(error)
         else:
-            st.session_state["data"]["last_updated"] = datetime.datetime.now().isoformat()
+            cest_tz = pytz.timezone("Europe/Paris")
+            st.session_state["data"]["last_updated"] = datetime.datetime.now(cest_tz).isoformat()
             json_content = json.dumps(st.session_state["data"], indent=4)
             with open("cv_data.json", "w") as f:
                 f.write(json_content)
