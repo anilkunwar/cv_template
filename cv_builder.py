@@ -284,16 +284,13 @@ elif st.session_state["active_tab"] == "Publications":
                 st.session_state["pub_counter"] += 1
                 st.rerun()
     st.subheader("Published by Year")
-    if "pub_year" not in st.session_state:
-        st.session_state["pub_year"] = ""
-    year = st.text_input("Year for New Publication", value=st.session_state["pub_year"], key="pub_year")
+    year = st.text_input("Year for New Publication", key="pub_year")
     if st.button("Add Publication for Year", key="add_pub_year"):
         if not year:
             st.error("Please enter a year.")
         elif not year.isdigit():
             st.error("Year must be a valid number.")
         else:
-            st.session_state["pub_year"] = year
             if year not in st.session_state["data"]["publications"]["by_year"]:
                 st.session_state["data"]["publications"]["by_year"][year] = []
             st.session_state["data"]["publications"]["by_year"][year].append({
@@ -305,14 +302,12 @@ elif st.session_state["active_tab"] == "Publications":
         with st.expander(f"Year {year}"):
             for i, pub in enumerate(st.session_state["data"]["publications"]["by_year"][year]):
                 st.subheader(f"Publication {i+1}")
-                # Use pub_counter to ensure unique keys
                 authors = st.text_input(f"Authors (Year {year})", value=pub["authors"], key=f"pub_{year}_authors_{i}_{st.session_state['pub_counter']}")
                 title = st.text_input(f"Title", value=pub["title"], key=f"pub_{year}_title_{i}_{st.session_state['pub_counter']}")
                 journal = st.text_input(f"Journal", value=pub["journal"], key=f"pub_{year}_journal_{i}_{st.session_state['pub_counter']}")
                 url = st.text_input(f"URL", value=pub["url"], key=f"pub_{year}_url_{i}_{st.session_state['pub_counter']}")
                 impact_factor = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_{year}_if_{i}_{st.session_state['pub_counter']}")
                 citations = st.text_input(f"Citations", value=pub["citations"], key=f"pub_{year}_citations_{i}_{st.session_state['pub_counter']}")
-                # Auto-save on input change
                 pub["authors"] = authors
                 pub["title"] = title
                 pub["journal"] = journal
@@ -337,7 +332,8 @@ elif st.session_state["active_tab"] == "Conference Proceedings":
             if conf_year not in st.session_state["data"]["conference_proceedings"]:
                 st.session_state["data"]["conference_proceedings"][conf_year] = []
             st.session_state["data"]["conference_proceedings"][conf_year].append({
-                "authors": "", "title": "", "venue": "", "url": "", "citations": ""
+                "authors": "", "title": "", "venue": "", "url": "",齊
+                "citations": ""
             })
     for year in sorted(st.session_state["data"]["conference_proceedings"].keys(), reverse=True):
         with st.expander(f"Year {year}"):
@@ -498,8 +494,8 @@ elif st.session_state["active_tab"] == "Skills & Memberships":
 
 # Save and Download Section
 st.header("Save and Download")
-# Debug: Show session state for publications
-st.write("Debug: Current publications in session state:", st.session_state["data"]["publications"])
+# Debug: Show session state for publications (uncomment for debugging)
+# st.write("Debug: Current publications in session state:", st.session_state["data"]["publications"])
 col1, col2 = st.columns(2)
 with col1:
     if st.button("Save Data to JSON"):
