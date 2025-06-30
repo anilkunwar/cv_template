@@ -328,26 +328,35 @@ elif st.session_state["active_tab"] == "Publications":
 elif st.session_state["active_tab"] == "Conference Proceedings":
     conf_year = st.text_input("Year for New Conference Proceeding", key="conf_year")
     if st.button("Add Conference Proceeding", key="add_conf"):
-        if conf_year and conf_year.isdigit():
+        if not conf_year:
+            st.error("Please enter a year.")
+        elif not conf_year.isdigit():
+            st.error("Year must be a valid number.")
+        else:
             if conf_year not in st.session_state["data"]["conference_proceedings"]:
                 st.session_state["data"]["conference_proceedings"][conf_year] = []
             st.session_state["data"]["conference_proceedings"][conf_year].append({
-                "authors": "", "title": "", "venue": "", "url": "",齊
-                "citations": ""
+                "authors": "", "title": "", "venue": "", "url": "", "citations": ""
             })
+            st.session_state["pub_counter"] += 1
+            st.success(f"New conference proceeding added for year {conf_year}.")
     for year in sorted(st.session_state["data"]["conference_proceedings"].keys(), reverse=True):
         with st.expander(f"Year {year}"):
             for i, conf in enumerate(st.session_state["data"]["conference_proceedings"][year]):
                 st.subheader(f"Conference Proceeding {i+1}")
-                conf["authors"] = st.text_input(f"Authors (Year {year})", value=conf["authors"], key=f"conf_{year}_authors_{i}")
-                conf["title"] = st.text_input(f"Title", value=conf["title"], key=f"conf_{year}_title_{i}")
-                conf["venue"] = st.text_input(f"Venue", value=conf["venue"], key=f"conf_{year}_venue_{i}")
-                conf["url"] = st.text_input(f"URL", value=conf["url"], key=f"conf_{year}_url_{i}")
-                conf["citations"] = st.text_input(f"Citations", value=conf["citations"], key=f"conf_{year}_citations_{i}")
-                if st.button(f"Remove Conference Proceeding {i+1} (Year {year})", key=f"remove_conf_{year}_{i}"):
+                conf["authors"] = st.text_input(f"Authors (Year {year})", value=conf["authors"], key=f"conf_{year}_authors_{i}_{st.session_state['pub_counter']}")
+                conf["title"] = st.text_input(f"Title", value=conf["title"], key=f"conf_{year}_title_{i}_{st.session_state['pub_counter']}")
+                conf["venue"] = st.text_input(f"Venue", value=conf["venue"], key=f"conf_{year}_venue_{i}_{st.session_state['pub_counter']}")
+                conf["url"] = st.text_input(f"URL", value=conf["url"], key=f"conf_{year}_url_{i}_{st.session_state['pub_counter']}")
+                conf["citations"] = st.text_input(f"Citations", value=conf["citations"], key=f"conf_{year}_citations_{i}_{st.session_state['pub_counter']}")
+                if st.button(f"Save Conference Proceeding {i+1} (Year {year})", key=f"save_conf_{year}_{i}_{st.session_state['pub_counter']}"):
+                    st.session_state["data"]["conference_proceedings"][year][i] = conf
+                    st.success(f"Conference Proceeding {i+1} (Year {year}) saved.")
+                if st.button(f"Remove Conference Proceeding {i+1} (Year {year})", key=f"remove_conf_{year}_{i}_{st.session_state['pub_counter']}"):
                     st.session_state["data"]["conference_proceedings"][year].pop(i)
                     if not st.session_state["data"]["conference_proceedings"][year]:
                         del st.session_state["data"]["conference_proceedings"][year]
+                    st.session_state["pub_counter"] += 1
                     st.rerun()
 
 elif st.session_state["active_tab"] == "Book":
