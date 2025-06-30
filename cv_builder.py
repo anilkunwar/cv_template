@@ -170,6 +170,8 @@ if "sty_content" not in st.session_state:
     st.session_state["sty_content"] = ""
 if "active_tab" not in st.session_state:
     st.session_state["active_tab"] = "Personal Info"
+if "pub_counter" not in st.session_state:
+    st.session_state["pub_counter"] = 0  # Ensure unique widget keys
 
 # Sidebar navigation
 st.sidebar.header("Upload CV Database")
@@ -265,47 +267,67 @@ elif st.session_state["active_tab"] == "Publications":
         st.session_state["data"]["publications"]["under_review"].append({
             "authors": "", "title": "", "journal": "", "url": "", "impact_factor": "", "citations": ""
         })
+        st.session_state["pub_counter"] += 1
     for i, pub in enumerate(st.session_state["data"]["publications"]["under_review"]):
         with st.expander(f"Publication Under Review {i+1}"):
-            pub["authors"] = st.text_input(f"Authors", value=pub["authors"], key=f"pub_under_authors_{i}")
-            pub["title"] = st.text_input(f"Title", value=pub["title"], key=f"pub_under_title_{i}")
-            pub["journal"] = st.text_input(f"Journal", value=pub["journal"], key=f"pub_under_journal_{i}")
-            pub["url"] = st.text_input(f"URL", value=pub["url"], key=f"pub_under_url_{i}")
-            pub["impact_factor"] = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_under_if_{i}")
-            pub["citations"] = st.text_input(f"Citations", value=pub["citations"], key=f"pub_under_citations_{i}")
-            if st.button(f"Save Publication Under Review {i+1}", key=f"save_pub_under_{i}"):
+            pub["authors"] = st.text_input(f"Authors", value=pub["authors"], key=f"pub_under_authors_{i}_{st.session_state['pub_counter']}")
+            pub["title"] = st.text_input(f"Title", value=pub["title"], key=f"pub_under_title_{i}_{st.session_state['pub_counter']}")
+            pub["journal"] = st.text_input(f"Journal", value=pub["journal"], key=f"pub_under_journal_{i}_{st.session_state['pub_counter']}")
+            pub["url"] = st.text_input(f"URL", value=pub["url"], key=f"pub_under_url_{i}_{st.session_state['pub_counter']}")
+            pub["impact_factor"] = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_under_if_{i}_{st.session_state['pub_counter']}")
+            pub["citations"] = st.text_input(f"Citations", value=pub["citations"], key=f"pub_under_citations_{i}_{st.session_state['pub_counter']}")
+            if st.button(f"Save Publication Under Review {i+1}", key=f"save_pub_under_{i}_{st.session_state['pub_counter']}"):
                 st.session_state["data"]["publications"]["under_review"][i] = pub
                 st.success(f"Publication Under Review {i+1} saved.")
-            if st.button(f"Remove Publication Under Review {i+1}", key=f"remove_pub_under_{i}"):
+            if st.button(f"Remove Publication Under Review {i+1}", key=f"remove_pub_under_{i}_{st.session_state['pub_counter']}"):
                 st.session_state["data"]["publications"]["under_review"].pop(i)
+                st.session_state["pub_counter"] += 1
                 st.rerun()
     st.subheader("Published by Year")
-    year = st.text_input("Year for New Publication", key="pub_year")
+    if "pub_year" not in st.session_state:
+        st.session_state["pub_year"] = ""
+    year = st.text_input("Year for New Publication", value=st.session_state["pub_year"], key="pub_year")
     if st.button("Add Publication for Year", key="add_pub_year"):
-        if year and year.isdigit():
+        if not year:
+            st.error("Please enter a year.")
+        elif not year.isdigit():
+            st.error("Year must be a valid number.")
+        else:
+            st.session_state["pub_year"] = year
             if year not in st.session_state["data"]["publications"]["by_year"]:
                 st.session_state["data"]["publications"]["by_year"][year] = []
             st.session_state["data"]["publications"]["by_year"][year].append({
                 "authors": "", "title": "", "journal": "", "url": "", "impact_factor": "", "citations": ""
             })
+            st.session_state["pub_counter"] += 1
             st.success(f"New publication added for year {year}.")
     for year in sorted(st.session_state["data"]["publications"]["by_year"].keys(), reverse=True):
         with st.expander(f"Year {year}"):
             for i, pub in enumerate(st.session_state["data"]["publications"]["by_year"][year]):
                 st.subheader(f"Publication {i+1}")
-                pub["authors"] = st.text_input(f"Authors (Year {year})", value=pub["authors"], key=f"pub_{year}_authors_{i}")
-                pub["title"] = st.text_input(f"Title", value=pub["title"], key=f"pub_{year}_title_{i}")
-                pub["journal"] = st.text_input(f"Journal", value=pub["journal"], key=f"pub_{year}_journal_{i}")
-                pub["url"] = st.text_input(f"URL", value=pub["url"], key=f"pub_{year}_url_{i}")
-                pub["impact_factor"] = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_{year}_if_{i}")
-                pub["citations"] = st.text_input(f"Citations", value=pub["citations"], key=f"pub_{year}_citations_{i}")
-                if st.button(f"Save Publication {i+1} (Year {year})", key=f"save_pub_{year}_{i}"):
+                # Use pub_counter to ensure unique keys
+                authors = st.text_input(f"Authors (Year {year})", value=pub["authors"], key=f"pub_{year}_authors_{i}_{st.session_state['pub_counter']}")
+                title = st.text_input(f"Title", value=pub["title"], key=f"pub_{year}_title_{i}_{st.session_state['pub_counter']}")
+                journal = st.text_input(f"Journal", value=pub["journal"], key=f"pub_{year}_journal_{i}_{st.session_state['pub_counter']}")
+                url = st.text_input(f"URL", value=pub["url"], key=f"pub_{year}_url_{i}_{st.session_state['pub_counter']}")
+                impact_factor = st.text_input(f"Impact Factor", value=pub["impact_factor"], key=f"pub_{year}_if_{i}_{st.session_state['pub_counter']}")
+                citations = st.text_input(f"Citations", value=pub["citations"], key=f"pub_{year}_citations_{i}_{st.session_state['pub_counter']}")
+                # Auto-save on input change
+                pub["authors"] = authors
+                pub["title"] = title
+                pub["journal"] = journal
+                pub["url"] = url
+                pub["impact_factor"] = impact_factor
+                pub["citations"] = citations
+                st.session_state["data"]["publications"]["by_year"][year][i] = pub
+                if st.button(f"Save Publication {i+1} (Year {year})", key=f"save_pub_{year}_{i}_{st.session_state['pub_counter']}"):
                     st.session_state["data"]["publications"]["by_year"][year][i] = pub
                     st.success(f"Publication {i+1} (Year {year}) saved.")
-                if st.button(f"Remove Publication {i+1} (Year {year})", key=f"remove_pub_{year}_{i}"):
+                if st.button(f"Remove Publication {i+1} (Year {year})", key=f"remove_pub_{year}_{i}_{st.session_state['pub_counter']}"):
                     st.session_state["data"]["publications"]["by_year"][year].pop(i)
                     if not st.session_state["data"]["publications"]["by_year"][year]:
                         del st.session_state["data"]["publications"]["by_year"][year]
+                    st.session_state["pub_counter"] += 1
                     st.rerun()
 
 elif st.session_state["active_tab"] == "Conference Proceedings":
@@ -476,6 +498,8 @@ elif st.session_state["active_tab"] == "Skills & Memberships":
 
 # Save and Download Section
 st.header("Save and Download")
+# Debug: Show session state for publications
+st.write("Debug: Current publications in session state:", st.session_state["data"]["publications"])
 col1, col2 = st.columns(2)
 with col1:
     if st.button("Save Data to JSON"):
